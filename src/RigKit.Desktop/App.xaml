@@ -1,0 +1,32 @@
+<Application x:Class="RigKit.Desktop.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="WindowBorderBrush" Color="#252A33" />
+                    <SolidColorBrush x:Key="AppBrandBrush" Color="#C9551F" />
+                    <SolidColorBrush x:Key="AppBrandWashBrush" Color="#FBF0E8" />
+                    <SolidColorBrush x:Key="AppCanvasBrush" Color="#F2F3F1EB" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="WindowBorderBrush" Color="#3A4250" />
+                    <SolidColorBrush x:Key="AppBrandBrush" Color="#E0662E" />
+                    <SolidColorBrush x:Key="AppBrandWashBrush" Color="#24160F" />
+                    <SolidColorBrush x:Key="AppCanvasBrush" Color="#F2080A0E" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <SolidColorBrush x:Key="WindowBorderBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+                    <SolidColorBrush x:Key="AppBrandBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+                    <SolidColorBrush x:Key="AppBrandWashBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+                    <SolidColorBrush x:Key="AppCanvasBrush" Color="{ThemeResource SystemColorWindowColor}" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

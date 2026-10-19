@@ -10,11 +10,11 @@
 
 ## 当前状态
 
-M0 已收口，**M1 只读体检 7 项完成**。.NET 10 SDK 10.0.402 已安装，WPF 模板可用。
+M0 已收口，**M1 只读体检 7 项完成**；UI 壳已切到 **WinUI 3（P0/P1）**。
 
 M0 已完成：
 
-- `RigKit.slnx` + 8 个主项目 + `tools/RigKit.Probe`
+- `RigKit.slnx` + 9 个主项目（含 WinUI 3 `RigKit.Desktop`）+ `tools/RigKit.Probe`
 - `Directory.Build.props` / `global.json` / `.editorconfig` / `CONTRIBUTING.md`
 - Domain 设备与传感器模型、`IDeviceProvider` 抽象
 - `NvmlProvider`（首选）+ `NvidiaSmiProvider`（回退）+ `FallbackDeviceProvider`
@@ -44,6 +44,17 @@ M0 残留验证（不阻塞只读工作台）：双卡真机、8 小时 soak、�
 - 单元测试增至 43 个
 - 下一步：稳定性监测、评分模型、HTML / PDF 报告
 
+## WinUI 3 UI 迁移（P0 / P1 壳完成）
+
+![RigKit WinUI 3 P0](docs/screenshots/winui-p0.png)
+
+- 新工程：`src/RigKit.Desktop`，WinUI 3 + Windows App SDK 2.5.1，unpackaged / self-contained WAM
+- 已接入：Mica、原生标题栏、1 px 窗口边框、NavigationView 侧栏、深浅主题、设置页、侧栏收缩持久化
+- 工作台读取真实 90HX 传感器（温度 / 功耗 / 显存 / 风扇）
+- 深色 + 折叠侧栏：`docs/screenshots/winui-p0-dark-collapsed.png`
+- WPF 版 `src/RigKit.App` 暂时保留，等 WinUI 功能对齐后再移除
+- 设计见 `docs/WINUI3-MIGRATION.md`
+
 ## 开发命令
 
 ```powershell
@@ -52,6 +63,12 @@ M0 残留验证（不阻塞只读工作台）：双卡真机、8 小时 soak、�
 
 # 设备探测（只读，不需要管理员权限）
 .\probe.ps1
+
+# WinUI 3 工作台（P0）
+dotnet run --project src\RigKit.Desktop
+
+# WinUI 3 设置页
+dotnet run --project src\RigKit.Desktop -- --settings
 
 # 显存 64 MB 双模式读写校验（CUDA Driver API）
 dotnet run --project tools\RigKit.Probe -- --vram

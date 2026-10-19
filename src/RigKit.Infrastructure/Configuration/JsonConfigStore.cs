@@ -6,7 +6,8 @@ namespace RigKit.Infrastructure.Configuration;
 public sealed record AppConfig(
     [property: JsonPropertyName("pollIntervalSeconds")] int PollIntervalSeconds = 1,
     [property: JsonPropertyName("theme")] string Theme = "light",
-    [property: JsonPropertyName("historyCapacity")] int HistoryCapacity = 300)
+    [property: JsonPropertyName("historyCapacity")] int HistoryCapacity = 300,
+    [property: JsonPropertyName("sidebarCollapsed")] bool SidebarCollapsed = false)
 {
     public AppConfig Normalize() => this with
     {

@@ -32,13 +32,18 @@ public sealed class JsonConfigStoreTests
         try
         {
             var store = new JsonConfigStore(path);
-            store.Save(new AppConfig(PollIntervalSeconds: 0, Theme: "dark", HistoryCapacity: 10));
+            store.Save(new AppConfig(
+                PollIntervalSeconds: 0,
+                Theme: "dark",
+                HistoryCapacity: 10,
+                SidebarCollapsed: true));
 
             var config = store.LoadOrCreate();
 
             Assert.Equal(1, config.PollIntervalSeconds);
             Assert.Equal("dark", config.Theme);
             Assert.Equal(60, config.HistoryCapacity);
+            Assert.True(config.SidebarCollapsed);
         }
         finally
         {
