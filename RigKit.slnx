@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RigKit.Agent/RigKit.Agent.csproj" />
+    <Project Path="src/RigKit.App/RigKit.App.csproj" />
+    <Project Path="src/RigKit.Application/RigKit.Application.csproj" />
+    <Project Path="src/RigKit.Broker/RigKit.Broker.csproj" />
+    <Project Path="src/RigKit.Contracts/RigKit.Contracts.csproj" />
+    <Project Path="src/RigKit.Domain/RigKit.Domain.csproj" />
+    <Project Path="src/RigKit.Infrastructure/RigKit.Infrastructure.csproj" />
+    <Project Path="src/RigKit.Updater/RigKit.Updater.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RigKit.UnitTests/RigKit.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/RigKit.Probe/RigKit.Probe.csproj" />
+  </Folder>
+</Solution>
