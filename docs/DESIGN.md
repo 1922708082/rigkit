@@ -1303,7 +1303,7 @@ Secure Boot 状态（仅提示，不阻断）
 | 4 | 代码签名 | 走开源路线：Certum Open Source 为主，Sigstore 透明签名为辅，并行申请 SignPath Foundation |
 | 5 | AI 计费 | 双通道：内置网关每日 50,000 token + 用户可填自己的 OpenAI 兼容 Key |
 | 6 | 版本策略 | 独立新版本，不背旧版兼容包袱，旧版仅作能力参考 |
-| 7 | 开发环境 | .NET 10 SDK 10.0.402 已安装（`C:\Users\19227\.dotnet`），WPF 模板可用 |
+| 7 | 开发环境 | .NET 10 SDK 10.0.402 已安装，WPF 模板可用 |
 | 8 | 开源协议 | **Apache-2.0**（含专利授权，商业友好） |
 | 9 | P 系列支持级别 | 统一标记 **Experimental**，不升 Supported / Verified |
 | 10 | 网关免费额度 | 每日 **50,000 token**（输入 + 输出），北京时间 0 点重置 |

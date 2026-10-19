@@ -29,7 +29,7 @@ M0 待办：NVML Provider、Broker 管道、WPF 工作台壳、CI。
 .\probe.ps1
 ```
 
-SDK 位于 `C:\Users\19227\.dotnet`（10.0.402）。系统自带的 `C:\Program Files\dotnet` 只有 6.0 运行时，因此已在新 PowerShell 窗口的 profile 中加了 `dotnet` 转发函数；`dotnet --version` 新开窗口可直接用。CMD / Git Bash 中如果仍命中系统 6.0 宿主，请用 `C:\Users\19227\.dotnet\dotnet.exe` 或直接跑 `.\build.ps1`。
+SDK 建议装在 `%USERPROFILE%\.dotnet`（10.0.402）。系统自带的 `C:\Program Files\dotnet` 如果只有运行时、没有 SDK，`dotnet` 命令可能命中旧宿主；可在 PowerShell profile 中转发到用户级 SDK，或直接运行 `.\build.ps1`。
 
 ## 首版范围
 
