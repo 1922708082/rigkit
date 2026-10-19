@@ -30,7 +30,7 @@
 - [x] **T0-03** 接入 xUnit，建 `tests/RigKit.UnitTests`，先覆盖 CSV 解析与缺失值处理
   → 验收：`dotnet test` 通过（当前 19 个用例）；Integration / Hardware 测试项目后续补
 - [ ] **T0-04** 配置 GitHub Actions：restore / build / test / publish 四段
-  → 验收：PR 触发流水线，5 分钟内完成
+  → 验收：workflow 文件已写好，本地 Release 构建/测试通过；推送被 PAT 的 `workflow` 权限拦截，待授权后补推
 - [ ] **T0-05** 建立 Conventional Commits 规范与 PR 模板
   → 验收：提交检查生效
 - [x] **T0-05b** 添加 `LICENSE`（Apache-2.0）与 `NOTICE`，项目文件声明 `PackageLicenseExpression`
@@ -60,7 +60,7 @@
 - [x] **T0-13b** `SupportMatrix` 基线：CMP 默认 Supported，P 系列与 170HX 统一 Experimental，未知卡 DetectOnly
   → 验收：9 个矩阵用例通过；P 系列 `AllowsGraphicsUnlock=false`
 - [x] **T0-14** NVML Provider：温度、功耗、利用率、显存、频率、PState、PCIe 代数/宽度
-  → 验收：本机 90HX 实测通过，NVML 与 nvidia-smi 数值一致（功耗墙口径差异已记录）
+  → 验收：温度 / 功耗 / 频率 / 显存与 nvidia-smi 一致；功耗墙口径差异已记录（NVML 300W vs nvidia-smi default 250W）
 - [ ] **T0-15** 设备枚举以 PCI 位置（bus/device/function）为主键
   → 验收：已按 PCI 位置实现，待双卡真机验证
 - [x] **T0-16** nvidia-smi Provider（作为 NVML 的回退数据源）

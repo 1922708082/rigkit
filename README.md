@@ -1,7 +1,5 @@
 # 矿卡工具箱 RigKit
 
-[![ci](https://github.com/1922708082/rigkit/actions/workflows/ci.yml/badge.svg)](https://github.com/1922708082/rigkit/actions/workflows/ci.yml)
-
 仓库：<https://github.com/1922708082/rigkit>
 
 面向矿卡持有者的硬件全生命周期工作台：验卡、解锁、调优、维护，全程可回滚。
@@ -27,7 +25,7 @@ M0 已完成：
 - `SupportMatrix`：CMP 默认 Supported，P 系列与 170HX 统一 Experimental，P 系列禁用图形解锁入口
 - xUnit 单元测试 19 个用例通过（CSV、缺失值、支持级别、Provider 回退）
 - `LICENSE`（Apache-2.0）与 `NOTICE` 已加入仓库
-- GitHub Actions CI：restore / build / test
+- GitHub Actions CI 配置已写好，本地 Release 构建 / 测试通过；推送待补 `workflow` 权限
 
 M0 待办：PnP 热插拔、300 点环形缓冲 + SQLite 降采样、单实例、审计表、崩溃 dump。
 
