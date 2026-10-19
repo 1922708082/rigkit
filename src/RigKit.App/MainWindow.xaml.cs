@@ -1,7 +1,9 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using RigKit.App.Services;
 using RigKit.App.ViewModels;
+using Serilog;
 
 namespace RigKit.App;
 
@@ -12,13 +14,13 @@ public partial class MainWindow : Window
     private bool _initialized;
     private bool _refreshing;
 
-    public MainWindow(MainViewModel viewModel)
+    public MainWindow(MainViewModel viewModel, TimeSpan? pollInterval = null)
     {
         InitializeComponent();
         _viewModel = viewModel;
         DataContext = viewModel;
 
-        _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _timer = new DispatcherTimer { Interval = pollInterval ?? TimeSpan.FromSeconds(1) };
         _timer.Tick += Timer_Tick;
         Loaded += MainWindow_Loaded;
         Closed += (_, _) => _timer.Stop();
@@ -33,6 +35,13 @@ public partial class MainWindow : Window
 
         _initialized = true;
         await _viewModel.InitializeAsync();
+        StartupDiagnostics.Write(
+            $"ui initialized device={_viewModel.DeviceName} provider={_viewModel.ProviderText} error={_viewModel.ErrorText}");
+        Log.Information(
+            "UI initialized device={Device} provider={Provider} error={Error}",
+            _viewModel.DeviceName,
+            _viewModel.ProviderText,
+            _viewModel.ErrorText);
         _timer.Start();
     }
 
@@ -44,6 +53,11 @@ public partial class MainWindow : Window
     private async void Refresh_Click(object sender, RoutedEventArgs e)
     {
         await RefreshSafeAsync();
+    }
+
+    private async void Rescan_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.ReloadDevicesAsync();
     }
 
     private async Task RefreshSafeAsync()

@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using RigKit.Contracts.Ipc;
+using Serilog;
 
 namespace RigKit.Broker;
 
@@ -17,16 +18,23 @@ public sealed class PipeServer
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly string _pipeName;
+    private readonly bool _devMode;
+    private readonly TimeSpan _idleTimeout;
+    private readonly CommandRegistry _registry = new();
+    private readonly AuditStore _audit = new();
 
-    public PipeServer(string? pipeName = null)
+    public PipeServer(string? pipeName = null, bool devMode = false, TimeSpan? idleTimeout = null)
     {
         _pipeName = string.IsNullOrWhiteSpace(pipeName) ? IpcMethods.PipeName : pipeName;
+        _devMode = devMode;
+        _idleTimeout = idleTimeout ?? TimeSpan.FromSeconds(60);
     }
 
     public async Task RunAsync(CancellationToken cancellationToken, bool once = false)
     {
         Console.WriteLine($"RigKit Broker 已启动：\\\\.\\pipe\\{_pipeName}");
         Console.WriteLine("只读方法：system.info / ping。写操作尚未开放。");
+        Log.Information("Broker listening pipe={Pipe} dev={Dev} idle={Idle}s", _pipeName, _devMode, _idleTimeout.TotalSeconds);
 
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -37,8 +45,41 @@ public sealed class PipeServer
                 PipeTransmissionMode.Byte,
                 PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
-            await pipe.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
-            await HandleConnectionAsync(pipe, cancellationToken).ConfigureAwait(false);
+            using var idle = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            idle.CancelAfter(_idleTimeout);
+
+            try
+            {
+                await pipe.WaitForConnectionAsync(idle.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                Console.WriteLine($"空闲 {_idleTimeout.TotalSeconds:0} 秒，Broker 退出。");
+                return;
+            }
+
+            var caller = CallerValidator.Inspect(pipe, _devMode);
+            if (!caller.IsAllowed)
+            {
+                Console.WriteLine($"拒绝未授权调用方：pid={caller.ProcessId} path={caller.ImagePath}");
+                Log.Warning("Caller rejected pid={Pid} process={Process} path={Path}", caller.ProcessId, caller.ProcessName, caller.ImagePath);
+                await AuditAsync("connect", caller, "rejected", -32001, "caller not allowed", cancellationToken)
+                    .ConfigureAwait(false);
+                await TryWriteFrameAsync(
+                    pipe,
+                    Encoding.UTF8.GetBytes(ErrorResponse(null, -32001, "Caller is not allowed.")),
+                    cancellationToken).ConfigureAwait(false);
+
+                if (once)
+                {
+                    return;
+                }
+
+                continue;
+            }
+
+            await AuditAsync("connect", caller, "ok", null, null, cancellationToken).ConfigureAwait(false);
+            await HandleConnectionAsync(pipe, caller, cancellationToken).ConfigureAwait(false);
 
             if (once)
             {
@@ -47,7 +88,10 @@ public sealed class PipeServer
         }
     }
 
-    private static async Task HandleConnectionAsync(Stream pipe, CancellationToken cancellationToken)
+    private async Task HandleConnectionAsync(
+        Stream pipe,
+        CallerInfo caller,
+        CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -58,10 +102,16 @@ public sealed class PipeServer
             }
             catch (InvalidDataException)
             {
-                await WriteFrameAsync(
+                await AuditAsync("parse", caller, "error", -32600, "invalid frame", cancellationToken)
+                    .ConfigureAwait(false);
+                await TryWriteFrameAsync(
                     pipe,
                     Encoding.UTF8.GetBytes(ErrorResponse(null, -32600, "Invalid request frame.")),
                     cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            catch (IOException)
+            {
                 return;
             }
 
@@ -70,12 +120,19 @@ public sealed class PipeServer
                 return;
             }
 
-            var response = Process(payload);
-            await WriteFrameAsync(pipe, Encoding.UTF8.GetBytes(response), cancellationToken).ConfigureAwait(false);
+            var response = await ProcessAsync(payload, caller, cancellationToken).ConfigureAwait(false);
+            if (!await TryWriteFrameAsync(pipe, Encoding.UTF8.GetBytes(response), cancellationToken)
+                    .ConfigureAwait(false))
+            {
+                return;
+            }
         }
     }
 
-    private static string Process(byte[] payload)
+    private async Task<string> ProcessAsync(
+        byte[] payload,
+        CallerInfo caller,
+        CancellationToken cancellationToken)
     {
         JsonDocument document;
         try
@@ -84,6 +141,8 @@ public sealed class PipeServer
         }
         catch (JsonException)
         {
+            await AuditAsync("parse", caller, "error", -32700, "parse error", cancellationToken)
+                .ConfigureAwait(false);
             return ErrorResponse(null, -32700, "Parse error.");
         }
 
@@ -94,6 +153,8 @@ public sealed class PipeServer
                 !root.TryGetProperty("method", out var methodElement) ||
                 methodElement.ValueKind != JsonValueKind.String)
             {
+                await AuditAsync("invalid", caller, "error", -32600, "invalid request", cancellationToken)
+                    .ConfigureAwait(false);
                 return ErrorResponse(null, -32600, "Invalid request.");
             }
 
@@ -103,37 +164,59 @@ public sealed class PipeServer
                 id = JsonNode.Parse(idElement.GetRawText());
             }
 
-            var method = methodElement.GetString();
-            Console.WriteLine($"{DateTimeOffset.Now:HH:mm:ss} {method}");
+            var method = methodElement.GetString() ?? string.Empty;
+            JsonElement? parameters = root.TryGetProperty("params", out var paramsElement)
+                ? paramsElement
+                : null;
 
-            return method switch
+            Console.WriteLine($"{DateTimeOffset.Now:HH:mm:ss} {method} pid={caller.ProcessId}");
+            Log.Information("RPC {Method} pid={Pid} process={Process}", method, caller.ProcessId, caller.ProcessName);
+
+            if (!CommandRegistry.AreParametersEmpty(parameters))
             {
-                "ping" => SuccessResponse(id, new { pong = true, timestamp = DateTimeOffset.Now }),
-                "system.info" => SuccessResponse(id, BuildSystemInfo()),
-                _ => ErrorResponse(id, -32601, $"Method not found: {method}")
-            };
+                await AuditAsync(method, caller, "error", -32602, "params not accepted", cancellationToken)
+                    .ConfigureAwait(false);
+                return ErrorResponse(id, -32602, "Invalid params.");
+            }
+
+            if (!_registry.TryInvoke(method, out var result))
+            {
+                await AuditAsync(method, caller, "error", -32601, "method not found", cancellationToken)
+                    .ConfigureAwait(false);
+                return ErrorResponse(id, -32601, $"Method not found: {method}");
+            }
+
+            await AuditAsync(method, caller, "ok", null, null, cancellationToken).ConfigureAwait(false);
+            return SuccessResponse(id, result);
         }
     }
 
-    private static object BuildSystemInfo() => new
+    private async Task AuditAsync(
+        string method,
+        CallerInfo caller,
+        string result,
+        int? errorCode,
+        string? detail,
+        CancellationToken cancellationToken)
     {
-        version = typeof(PipeServer).Assembly.GetName().Version?.ToString() ?? "0.0.0",
-        processId = Environment.ProcessId,
-        user = Environment.UserName,
-        elevated = Environment.IsPrivilegedProcess,
-        os = Environment.OSVersion.VersionString,
-        runtime = Environment.Version.ToString(),
-        machine = Environment.MachineName,
-        timestamp = DateTimeOffset.Now
-    };
+        try
+        {
+            await _audit.LogAsync(method, caller, result, errorCode, detail, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // Shutting down; audit is best-effort.
+        }
+    }
 
-    private static string SuccessResponse(JsonNode? id, object result)
+    private static string SuccessResponse(JsonNode? id, JsonNode? result)
     {
         var response = new JsonObject
         {
             ["jsonrpc"] = "2.0",
             ["id"] = id,
-            ["result"] = JsonSerializer.SerializeToNode(result, JsonOptions)
+            ["result"] = result
         };
         return response.ToJsonString(JsonOptions);
     }
@@ -191,6 +274,26 @@ public sealed class PipeServer
         }
 
         return true;
+    }
+
+    private static async Task<bool> TryWriteFrameAsync(
+        Stream stream,
+        ReadOnlyMemory<byte> payload,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await WriteFrameAsync(stream, payload, cancellationToken).ConfigureAwait(false);
+            return true;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (ObjectDisposedException)
+        {
+            return false;
+        }
     }
 
     private static async Task WriteFrameAsync(

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Media;
+using RigKit.Application.Abstractions;
 using RigKit.Application.Devices;
 using RigKit.Domain.Capabilities;
 using RigKit.Domain.Devices;
@@ -13,6 +14,7 @@ public sealed class MainViewModel : ObservableObject
     private const double RingCircumferenceUnits = 42.41;
 
     private readonly DeviceService _devices;
+    private readonly ISensorHistoryStore? _history;
     private readonly Queue<double> _temperatures = new();
     private readonly Queue<double> _powers = new();
 
@@ -46,13 +48,16 @@ public sealed class MainViewModel : ObservableObject
     private string _lastUpdatedText = "等待数据";
     private string _errorText = string.Empty;
     private bool _isBusy;
+    private bool _hasDevice;
+    private bool _isLoading;
     private int _riskCount;
     private PointCollection _temperaturePoints = new();
     private PointCollection _powerPoints = new();
 
-    public MainViewModel(DeviceService devices)
+    public MainViewModel(DeviceService devices, ISensorHistoryStore? historyStore = null)
     {
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
+        _history = historyStore;
         ProviderText = $"设备数据：{_devices.ProviderName}";
         VersionText = $"v{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1.0"}";
         Risks = new ObservableCollection<RiskItem>();
@@ -230,6 +235,36 @@ public sealed class MainViewModel : ObservableObject
         private set => SetProperty(ref _isBusy, value);
     }
 
+    public bool HasDevice
+    {
+        get => _hasDevice;
+        private set
+        {
+            if (SetProperty(ref _hasDevice, value))
+            {
+                OnPropertyChanged(nameof(EmptyVisibility));
+            }
+        }
+    }
+
+    public bool IsLoading
+    {
+        get => _isLoading;
+        private set
+        {
+            if (SetProperty(ref _isLoading, value))
+            {
+                OnPropertyChanged(nameof(LoadingVisibility));
+                OnPropertyChanged(nameof(EmptyVisibility));
+            }
+        }
+    }
+
+    public Visibility LoadingVisibility => IsLoading ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility EmptyVisibility =>
+        !IsLoading && !HasDevice ? Visibility.Visible : Visibility.Collapsed;
+
     public int RiskCount
     {
         get => _riskCount;
@@ -256,11 +291,13 @@ public sealed class MainViewModel : ObservableObject
         }
 
         IsBusy = true;
+        IsLoading = true;
         try
         {
             var devices = await _devices.GetDevicesAsync();
             if (devices.Count == 0)
             {
+                HasDevice = false;
                 ErrorText = string.IsNullOrWhiteSpace(_devices.LastError)
                     ? "未发现 NVIDIA 设备。"
                     : _devices.LastError;
@@ -269,25 +306,8 @@ public sealed class MainViewModel : ObservableObject
                 return;
             }
 
-            _device = devices[0];
-            DeviceName = _device.Model;
-            Architecture = _device.Architecture;
-            MemoryLabel = _device.DisplayMemory;
-            DriverVersion = _device.DriverVersion;
-            PciIds = _device.PciIds;
-            DeviceMeta = $"{_device.Architecture} · {_device.DisplayMemory} · {_device.PciIds}";
-
-            var level = SupportMatrix.ForModel(_device.Model);
-            SupportLabel = level switch
-            {
-                SupportLevel.Supported => "已支持",
-                SupportLevel.Experimental => "实验性",
-                SupportLevel.DetectOnly => "仅检测",
-                _ => "不支持"
-            };
-            IsExperimental = level == SupportLevel.Experimental;
-
-            BuildRisks();
+            ApplyDevice(devices[0]);
+            HasDevice = true;
             await RefreshAsync();
             _initialized = true;
         }
@@ -298,8 +318,63 @@ public sealed class MainViewModel : ObservableObject
         }
         finally
         {
+            IsLoading = false;
             IsBusy = false;
         }
+    }
+
+    public async Task ReloadDevicesAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            var devices = await _devices.GetDevicesAsync();
+            if (devices.Count == 0)
+            {
+                HasDevice = false;
+                ErrorText = string.IsNullOrWhiteSpace(_devices.LastError)
+                    ? "未发现 NVIDIA 设备。"
+                    : _devices.LastError;
+                return;
+            }
+
+            ApplyDevice(devices[0]);
+            HasDevice = true;
+            ErrorText = string.Empty;
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorText = ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void ApplyDevice(Device device)
+    {
+        _device = device;
+        DeviceName = device.Model;
+        Architecture = device.Architecture;
+        MemoryLabel = device.DisplayMemory;
+        DriverVersion = device.DriverVersion;
+        PciIds = device.PciIds;
+        DeviceMeta = $"{device.Architecture} · {device.DisplayMemory} · {device.PciIds}";
+
+        var level = SupportMatrix.ForModel(device.Model);
+        SupportLabel = level switch
+        {
+            SupportLevel.Supported => "已支持",
+            SupportLevel.Experimental => "实验性",
+            SupportLevel.DetectOnly => "仅检测",
+            _ => "不支持"
+        };
+        IsExperimental = level == SupportLevel.Experimental;
+
+        BuildRisks();
+        _pcieRiskAdded = false;
     }
 
     public async Task RefreshAsync()
@@ -335,6 +410,18 @@ public sealed class MainViewModel : ObservableObject
             UpdateScore(sample);
             AppendPoints(sample);
             UpdatePcieRisk(sample);
+
+            if (_history is not null)
+            {
+                try
+                {
+                    await _history.AppendAsync(sample);
+                }
+                catch
+                {
+                    // History is best-effort; never block the live sensor path.
+                }
+            }
         }
         catch (Exception ex)
         {

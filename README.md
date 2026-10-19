@@ -10,24 +10,29 @@
 
 ## 当前状态
 
-设计已确认，M0 开发中。.NET 10 SDK 10.0.402 已安装，WPF 模板可用。
+设计已确认，**M0 核心完成**。.NET 10 SDK 10.0.402 已安装，WPF 模板可用。
 
 M0 已完成：
 
 - `RigKit.slnx` + 8 个主项目 + `tools/RigKit.Probe`
-- `Directory.Build.props` / `global.json` / `.editorconfig`
+- `Directory.Build.props` / `global.json` / `.editorconfig` / `CONTRIBUTING.md`
 - Domain 设备与传感器模型、`IDeviceProvider` 抽象
 - `NvmlProvider`（首选）+ `NvidiaSmiProvider`（回退）+ `FallbackDeviceProvider`
 - 本机 CMP 90HX 实测通过：PCIe Gen2 x16、10 GB、驱动 616.92、温度 / 功耗 / 频率可读
-- Broker 只读管道：`system.info` / `ping`，`CurrentUserOnly`，单实例信号量
-- WPF 工作台：1360×860、侧栏、设备卡、评分环、4 个 KPI、风险列表、1 秒曲线
+- Broker 只读管道：`system.info` / `ping`，`CurrentUserOnly`，调用方镜像 allowlist，60 秒空闲退出
+- SQLite 审计表：每次连接 / 调用记录 PID、进程、路径、结果；拒绝连接也入库
+- WPF 工作台：1360×860 与 1180×720、侧栏、设备卡、评分环、4 个 KPI、风险列表、1 秒曲线
+- 空状态 / 加载态 / 错误态三套模板
+- PnP 热插拔监听（WMI `Win32_PnPEntity` + 1.5 秒防抖）
+- 300 点环形缓冲 + 每分钟 SQLite 降采样
+- 单实例守卫、启动诊断、Serilog 文件日志、崩溃 minidump
 - `--smoke` 无头渲染，用于 UI 回归与截图
 - `SupportMatrix`：CMP 默认 Supported，P 系列与 170HX 统一 Experimental，P 系列禁用图形解锁入口
-- xUnit 单元测试 19 个用例通过（CSV、缺失值、支持级别、Provider 回退）
+- xUnit 单元测试 24 个用例通过（CSV、缺失值、支持级别、Provider 回退、ring、SQLite、配置）
 - `LICENSE`（Apache-2.0）与 `NOTICE` 已加入仓库
 - GitHub Actions CI 配置见 `build/ci.yml`，本地 Release 构建 / 测试通过；授予 `workflow` 权限后复制到 `.github/workflows/ci.yml` 即可启用
 
-M0 待办：PnP 热插拔、300 点环形缓冲 + SQLite 降采样、单实例、审计表、崩溃 dump。
+M0 残留验证（不阻塞只读工作台）：双卡真机、8 小时 soak、真实拔插、CI workflow 推送权限。
 
 ## 开发命令
 

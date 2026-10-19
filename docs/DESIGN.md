@@ -4,7 +4,7 @@
 |---|---|
 | 文档版本 | v1.2 |
 | 日期 | 2026-10-19 |
-| 状态 | 设计已确认，M0 开发中 |
+| 状态 | 设计已确认，M0 核心完成 |
 | 参考项目 | `D:\app`（HX 家族多功能工具箱 v5.0、minehub） |
 | 仓库 | <https://github.com/1922708082/rigkit> |
 | 目标平台 | Windows 10 22H2 / Windows 11 x64 |
@@ -568,7 +568,7 @@ Draft
 | IPC | Named Pipes + StreamJsonRpc | 2.x | 成熟，支持通知与取消 |
 | JSON | System.Text.Json | 内置 | 源生成，AOT 友好 |
 | 原生互操作 | CsWin32 + 手写 P/Invoke | 最新 | 减少句柄与结构体错误 |
-| 测试 | xUnit + FluentAssertions | 最新 | 单测 + 集成测 |
+| 测试 | xUnit | 2.9.x | 单测 + 集成测 |
 | UI 自动化 | FlaUI（可选） | 4.x | 冒烟与回归 |
 | 安装器 | Inno Setup | 6.x | 轻量、脚本化、国内常用 |
 | CI | GitHub Actions | windows-latest | 与现有 Release 流程衔接 |
