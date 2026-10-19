@@ -58,7 +58,7 @@ public sealed class DeviceChangeWatcher : IDisposable
             _creation.Stop();
             _deletion.Stop();
         }
-        catch (ManagementException)
+        catch (Exception ex) when (ex is ManagementException or InvalidOperationException)
         {
             // Ignore shutdown failures.
         }

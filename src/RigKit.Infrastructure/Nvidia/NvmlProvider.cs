@@ -248,8 +248,15 @@ public sealed class NvmlProvider : IDeviceProvider, IDisposable
             }
         }
 
-        // Fall back to the first device when PCI ids are unavailable (mining drivers).
-        return count > 0 && NvmlNative.GetHandleByIndex(0, out var first) == NvmlReturn.Success ? first : IntPtr.Zero;
+        // Only fall back to the first device when the caller has no PCI identity.
+        if (string.Equals(deviceId.PciLocation, "unknown", StringComparison.OrdinalIgnoreCase) &&
+            count > 0 &&
+            NvmlNative.GetHandleByIndex(0, out var first) == NvmlReturn.Success)
+        {
+            return first;
+        }
+
+        return IntPtr.Zero;
     }
 
     private static string ReadName(IntPtr handle)
