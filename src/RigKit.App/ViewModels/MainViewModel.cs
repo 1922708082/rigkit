@@ -4,8 +4,10 @@ using System.Windows;
 using System.Windows.Media;
 using RigKit.Application.Abstractions;
 using RigKit.Application.Devices;
+using RigKit.Application.Health;
 using RigKit.Domain.Capabilities;
 using RigKit.Domain.Devices;
+using RigKit.Domain.Health;
 
 namespace RigKit.App.ViewModels;
 
@@ -15,6 +17,7 @@ public sealed class MainViewModel : ObservableObject
 
     private readonly DeviceService _devices;
     private readonly ISensorHistoryStore? _history;
+    private readonly HealthCheckRunner? _healthRunner;
     private readonly Queue<double> _temperatures = new();
     private readonly Queue<double> _powers = new();
 
@@ -53,18 +56,27 @@ public sealed class MainViewModel : ObservableObject
     private int _riskCount;
     private PointCollection _temperaturePoints = new();
     private PointCollection _powerPoints = new();
+    private string _healthCheckSummary = "尚未体检";
+    private bool _isChecking;
 
-    public MainViewModel(DeviceService devices, ISensorHistoryStore? historyStore = null)
+    public MainViewModel(
+        DeviceService devices,
+        ISensorHistoryStore? historyStore = null,
+        HealthCheckRunner? healthRunner = null)
     {
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
         _history = historyStore;
+        _healthRunner = healthRunner;
         ProviderText = $"设备数据：{_devices.ProviderName}";
         VersionText = $"v{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1.0"}";
         Risks = new ObservableCollection<RiskItem>();
+        HealthChecks = new ObservableCollection<HealthCheckItem>();
         Risks.CollectionChanged += (_, _) => RiskCount = Risks.Count;
     }
 
     public ObservableCollection<RiskItem> Risks { get; }
+
+    public ObservableCollection<HealthCheckItem> HealthChecks { get; }
 
     public string ProviderText { get; }
 
@@ -271,6 +283,18 @@ public sealed class MainViewModel : ObservableObject
         private set => SetProperty(ref _riskCount, value);
     }
 
+    public string HealthCheckSummary
+    {
+        get => _healthCheckSummary;
+        private set => SetProperty(ref _healthCheckSummary, value);
+    }
+
+    public bool IsChecking
+    {
+        get => _isChecking;
+        private set => SetProperty(ref _isChecking, value);
+    }
+
     public PointCollection TemperaturePoints
     {
         get => _temperaturePoints;
@@ -309,6 +333,7 @@ public sealed class MainViewModel : ObservableObject
             ApplyDevice(devices[0]);
             HasDevice = true;
             await RefreshAsync();
+            await RunHealthChecksAsync();
             _initialized = true;
         }
         catch (Exception ex)
@@ -342,6 +367,7 @@ public sealed class MainViewModel : ObservableObject
             HasDevice = true;
             ErrorText = string.Empty;
             await RefreshAsync();
+            await RunHealthChecksAsync();
         }
         catch (Exception ex)
         {
@@ -375,6 +401,49 @@ public sealed class MainViewModel : ObservableObject
 
         BuildRisks();
         _pcieRiskAdded = false;
+    }
+
+    public async Task RunHealthChecksAsync()
+    {
+        if (_device is null || _healthRunner is null || IsChecking)
+        {
+            return;
+        }
+
+        IsChecking = true;
+        HealthChecks.Clear();
+        HealthCheckSummary = "正在体检…";
+        try
+        {
+            var context = new HealthCheckContext(
+                _device,
+                (deviceId, cancellationToken) => _devices.GetSensorsAsync(deviceId, cancellationToken));
+            var progress = new InlineProgress<HealthCheckProgress>(update =>
+                HealthCheckSummary = update.Status is null
+                    ? $"正在检查 {update.Index}/{update.Total} · {update.Title}"
+                    : $"{update.Index}/{update.Total} · {update.Title}");
+
+            var report = await _healthRunner.RunAsync(context, progress);
+            foreach (var result in report.Results)
+            {
+                HealthChecks.Add(new HealthCheckItem(result));
+            }
+
+            HealthCheckSummary = report.HasFailures
+                ? $"{report.FailCount} 项失败"
+                : report.WarningCount > 0
+                    ? $"{report.WarningCount} 项注意"
+                    : "全部通过";
+        }
+        catch (Exception ex)
+        {
+            HealthCheckSummary = "体检失败";
+            ErrorText = ex.Message;
+        }
+        finally
+        {
+            IsChecking = false;
+        }
     }
 
     public async Task RefreshAsync()
@@ -604,6 +673,18 @@ public sealed class MainViewModel : ObservableObject
         }
 
         return points;
+    }
+
+    private sealed class InlineProgress<T> : IProgress<T>
+    {
+        private readonly Action<T> _report;
+
+        public InlineProgress(Action<T> report)
+        {
+            _report = report;
+        }
+
+        public void Report(T value) => _report(value);
     }
 
     private static string Format(double? value) =>

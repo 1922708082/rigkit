@@ -6,6 +6,8 @@ using System.Windows.Threading;
 using RigKit.App.Services;
 using RigKit.App.ViewModels;
 using RigKit.Application.Devices;
+using RigKit.Application.Health;
+using RigKit.Application.Health.Checks;
 using RigKit.Infrastructure.Configuration;
 using RigKit.Infrastructure.Nvidia;
 using RigKit.Infrastructure.Storage;
@@ -62,7 +64,14 @@ public partial class App : System.Windows.Application
 
         _provider = new FallbackDeviceProvider(new NvmlProvider(), new NvidiaSmiProvider());
         var history = new SensorHistoryStore();
-        var viewModel = new MainViewModel(new DeviceService(_provider), history);
+        var healthRunner = new HealthCheckRunner(new IHealthCheck[]
+        {
+            new IdentityHealthCheck(),
+            new PcieHealthCheck(),
+            new DriverHealthCheck(),
+            new PowerHealthCheck()
+        });
+        var viewModel = new MainViewModel(new DeviceService(_provider), history, healthRunner);
         var config = new JsonConfigStore().LoadOrCreate();
 
         if (smokeIndex >= 0)

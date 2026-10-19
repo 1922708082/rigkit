@@ -60,6 +60,11 @@ public partial class MainWindow : Window
         await _viewModel.ReloadDevicesAsync();
     }
 
+    private async void RunHealthChecks_Click(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.RunHealthChecksAsync();
+    }
+
     private async Task RefreshSafeAsync()
     {
         if (_refreshing)

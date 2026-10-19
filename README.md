@@ -4,13 +4,13 @@
 
 面向矿卡持有者的硬件全生命周期工作台：验卡、解锁、调优、维护，全程可回滚。
 
-![RigKit M0 工作台](docs/screenshots/home-m0.png)
+![RigKit M1 体检工作台](docs/screenshots/home-m1-health.png)
 
 > 截图由 `--smoke` 无头渲染生成，曲线为演示数据填充；真实运行时为 1 秒实时采样。
 
 ## 当前状态
 
-设计已确认，**M0 核心完成**。.NET 10 SDK 10.0.402 已安装，WPF 模板可用。
+M0 已收口，**M1 只读体检第一段完成**。.NET 10 SDK 10.0.402 已安装，WPF 模板可用。
 
 M0 已完成：
 
@@ -28,11 +28,20 @@ M0 已完成：
 - 单实例守卫、启动诊断、Serilog 文件日志、崩溃 minidump
 - `--smoke` 无头渲染，用于 UI 回归与截图
 - `SupportMatrix`：CMP 默认 Supported，P 系列与 170HX 统一 Experimental，P 系列禁用图形解锁入口
-- xUnit 单元测试 24 个用例通过（CSV、缺失值、支持级别、Provider 回退、ring、SQLite、配置）
+- xUnit 单元测试 37 个用例通过（CSV、缺失值、支持级别、Provider 回退、ring、SQLite、配置、体检框架）
 - `LICENSE`（Apache-2.0）与 `NOTICE` 已加入仓库
 - GitHub Actions CI 配置见 `build/ci.yml`，本地 Release 构建 / 测试通过；授予 `workflow` 权限后复制到 `.github/workflows/ci.yml` 即可启用
 
 M0 残留验证（不阻塞只读工作台）：双卡真机、8 小时 soak、真实拔插、CI workflow 推送权限。
+
+## M1 只读体检（第一段完成）
+
+- `HealthCheckRunner`：串行执行、单项超时、失败不阻断、进度回调
+- 4 个只读检查：识别与真伪、PCIe 链路、驱动与签名、功耗与墙值
+- 90HX 实测：4 项全部通过（PCI ID `220D`、Gen2 x16、驱动 616.92、298W / 300W）
+- 工作台新增「体检结果」卡，支持重新体检；截图见 `docs/screenshots/home-m1-health.png`
+- 单元测试增至 37 个
+- 下一步：显存完整性、温度曲线、稳定性、评分模型、HTML / PDF 报告
 
 ## 开发命令
 

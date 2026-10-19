@@ -391,6 +391,55 @@
                         </Border>
                     </Grid>
 
+                    <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12" Padding="16">
+                        <StackPanel>
+                            <Grid>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="体检结果" Style="{StaticResource SectionTitleStyle}" />
+                                    <TextBlock Text="{Binding HealthCheckSummary}" FontSize="10"
+                                               Foreground="{StaticResource FaintBrush}" Margin="10,2,0,0" />
+                                </StackPanel>
+                                <Button Content="重新体检" Click="RunHealthChecks_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        HorizontalAlignment="Right" />
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding HealthChecks}" Margin="0,8,0,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="2" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{Binding Background}" CornerRadius="8"
+                                                Padding="10,8" Margin="0,4,8,4" ToolTip="{Binding Detail}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="3" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Border Background="{Binding Accent}" CornerRadius="2" />
+                                                <StackPanel Grid.Column="1" Margin="9,0,0,0">
+                                                    <TextBlock Text="{Binding Title}" FontSize="11.5"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource InkBrush}" />
+                                                    <TextBlock Text="{Binding Summary}" FontSize="10"
+                                                               Foreground="{StaticResource MutedBrush}"
+                                                               TextWrapping="Wrap" Margin="0,2,0,0" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2" Text="{Binding StatusText}"
+                                                           FontSize="9.5" FontWeight="SemiBold"
+                                                           Foreground="{Binding Accent}"
+                                                           VerticalAlignment="Top" Margin="6,0,0,0" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1.05*" />
