@@ -18,6 +18,7 @@ public sealed class MainViewModel : ObservableObject
     private readonly DeviceService _devices;
     private readonly ISensorHistoryStore? _history;
     private readonly HealthCheckRunner? _healthRunner;
+    private readonly IVramTester? _vramTester;
     private readonly Queue<double> _temperatures = new();
     private readonly Queue<double> _powers = new();
 
@@ -62,11 +63,13 @@ public sealed class MainViewModel : ObservableObject
     public MainViewModel(
         DeviceService devices,
         ISensorHistoryStore? historyStore = null,
-        HealthCheckRunner? healthRunner = null)
+        HealthCheckRunner? healthRunner = null,
+        IVramTester? vramTester = null)
     {
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
         _history = historyStore;
         _healthRunner = healthRunner;
+        _vramTester = vramTester;
         ProviderText = $"设备数据：{_devices.ProviderName}";
         VersionText = $"v{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1.0"}";
         Risks = new ObservableCollection<RiskItem>();
@@ -417,7 +420,8 @@ public sealed class MainViewModel : ObservableObject
         {
             var context = new HealthCheckContext(
                 _device,
-                (deviceId, cancellationToken) => _devices.GetSensorsAsync(deviceId, cancellationToken));
+                (deviceId, cancellationToken) => _devices.GetSensorsAsync(deviceId, cancellationToken),
+                _vramTester);
             var progress = new InlineProgress<HealthCheckProgress>(update =>
                 HealthCheckSummary = update.Status is null
                     ? $"正在检查 {update.Index}/{update.Total} · {update.Title}"
@@ -433,7 +437,9 @@ public sealed class MainViewModel : ObservableObject
                 ? $"{report.FailCount} 项失败"
                 : report.WarningCount > 0
                     ? $"{report.WarningCount} 项注意"
-                    : "全部通过";
+                    : report.SkippedCount > 0
+                        ? $"{report.PassCount} 项通过 · {report.SkippedCount} 项跳过"
+                        : "全部通过";
         }
         catch (Exception ex)
         {

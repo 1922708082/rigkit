@@ -70,6 +70,8 @@ public sealed record HealthReport(
 
     public int FailCount => Results.Count(result => result.Status == HealthStatus.Fail);
 
+    public int SkippedCount => Results.Count(result => result.Status == HealthStatus.Skipped);
+
     public bool HasFailures => FailCount > 0;
 
     public HealthStatus OverallStatus =>

@@ -9,6 +9,7 @@ using RigKit.Application.Devices;
 using RigKit.Application.Health;
 using RigKit.Application.Health.Checks;
 using RigKit.Infrastructure.Configuration;
+using RigKit.Infrastructure.Cuda;
 using RigKit.Infrastructure.Nvidia;
 using RigKit.Infrastructure.Storage;
 using Serilog;
@@ -64,14 +65,18 @@ public partial class App : System.Windows.Application
 
         _provider = new FallbackDeviceProvider(new NvmlProvider(), new NvidiaSmiProvider());
         var history = new SensorHistoryStore();
+        var vramTester = new CudaVramTester();
         var healthRunner = new HealthCheckRunner(new IHealthCheck[]
         {
             new IdentityHealthCheck(),
             new PcieHealthCheck(),
             new DriverHealthCheck(),
-            new PowerHealthCheck()
+            new PowerHealthCheck(),
+            new VramIntegrityHealthCheck(),
+            new ThermalHealthCheck(),
+            new FanHealthCheck()
         });
-        var viewModel = new MainViewModel(new DeviceService(_provider), history, healthRunner);
+        var viewModel = new MainViewModel(new DeviceService(_provider), history, healthRunner, vramTester);
         var config = new JsonConfigStore().LoadOrCreate();
 
         if (smokeIndex >= 0)

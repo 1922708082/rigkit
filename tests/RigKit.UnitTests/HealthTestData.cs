@@ -1,3 +1,4 @@
+using RigKit.Application.Abstractions;
 using RigKit.Application.Health;
 using RigKit.Domain.Devices;
 
@@ -30,7 +31,8 @@ internal static class HealthTestData
         double? temperature = 75,
         double? power = 298,
         double? powerLimit = 300,
-        double? utilization = 100) =>
+        double? utilization = 100,
+        int? fanPercent = 40) =>
         new(
             deviceId ?? new DeviceId("00000000:01:00.0", "test"),
             DateTimeOffset.Now,
@@ -42,7 +44,7 @@ internal static class HealthTestData
             10240,
             1800,
             9000,
-            40,
+            fanPercent,
             "P0",
             pcieGeneration,
             pcieWidth,
@@ -51,7 +53,8 @@ internal static class HealthTestData
     public static HealthCheckContext CreateContext(
         Device? device = null,
         SensorSample? sample = null,
-        bool throwOnRead = false)
+        bool throwOnRead = false,
+        IVramTester? vramTester = null)
     {
         var actualDevice = device ?? CreateDevice();
         var actualSample = sample ?? CreateSample(actualDevice.Id);
@@ -59,6 +62,7 @@ internal static class HealthTestData
             actualDevice,
             (_, _) => throwOnRead
                 ? throw new InvalidOperationException("sensor read failed")
-                : Task.FromResult(actualSample));
+                : Task.FromResult(actualSample),
+            vramTester);
     }
 }

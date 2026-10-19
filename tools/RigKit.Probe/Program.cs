@@ -1,4 +1,5 @@
 ﻿using RigKit.Application.Devices;
+using RigKit.Infrastructure.Cuda;
 using RigKit.Infrastructure.Nvidia;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -35,6 +36,14 @@ try
         catch (NvidiaSmiException ex)
         {
             Console.WriteLine($"  传感器读取失败：{ex.Message}");
+        }
+
+        if (args.Contains("--vram", StringComparer.OrdinalIgnoreCase))
+        {
+            Console.WriteLine("  正在进行 64 MB CUDA 双模式读写校验…");
+            var result = new CudaVramTester().Test(device.Id, 64);
+            Console.WriteLine(
+                $"  显存测试：{result.Message} | available={result.Available} passed={result.Passed} mismatches={result.Mismatches}");
         }
 
         Console.WriteLine();
