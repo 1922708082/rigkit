@@ -30,7 +30,7 @@
 - [x] **T0-03** 接入 xUnit，建 `tests/RigKit.UnitTests`，先覆盖 CSV 解析与缺失值处理
   → 验收：`dotnet test` 通过（当前 19 个用例）；Integration / Hardware 测试项目后续补
 - [ ] **T0-04** 配置 GitHub Actions：restore / build / test / publish 四段
-  → 验收：workflow 文件已写好，本地 Release 构建/测试通过；推送被 PAT 的 `workflow` 权限拦截，待授权后补推
+  → 验收：`build/ci.yml` 已写好，本地 Release 构建/测试通过；授予 PAT `workflow` 权限后复制到 `.github/workflows/ci.yml` 并推送
 - [ ] **T0-05** 建立 Conventional Commits 规范与 PR 模板
   → 验收：提交检查生效
 - [x] **T0-05b** 添加 `LICENSE`（Apache-2.0）与 `NOTICE`，项目文件声明 `PackageLicenseExpression`

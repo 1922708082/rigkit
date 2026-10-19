@@ -25,7 +25,7 @@ M0 已完成：
 - `SupportMatrix`：CMP 默认 Supported，P 系列与 170HX 统一 Experimental，P 系列禁用图形解锁入口
 - xUnit 单元测试 19 个用例通过（CSV、缺失值、支持级别、Provider 回退）
 - `LICENSE`（Apache-2.0）与 `NOTICE` 已加入仓库
-- GitHub Actions CI 配置已写好，本地 Release 构建 / 测试通过；推送待补 `workflow` 权限
+- GitHub Actions CI 配置见 `build/ci.yml`，本地 Release 构建 / 测试通过；授予 `workflow` 权限后复制到 `.github/workflows/ci.yml` 即可启用
 
 M0 待办：PnP 热插拔、300 点环形缓冲 + SQLite 降采样、单实例、审计表、崩溃 dump。
 
