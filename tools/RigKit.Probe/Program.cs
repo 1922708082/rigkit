@@ -1,9 +1,10 @@
-﻿using RigKit.Infrastructure.Nvidia;
+﻿using RigKit.Application.Devices;
+using RigKit.Infrastructure.Nvidia;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-var provider = new NvidiaSmiProvider();
-Console.WriteLine($"RigKit Probe · provider={provider.Name}");
+using var provider = new FallbackDeviceProvider(new NvmlProvider(), new NvidiaSmiProvider());
+Console.WriteLine($"RigKit Probe · providers={provider.Name}");
 Console.WriteLine(new string('-', 64));
 
 try
@@ -11,7 +12,7 @@ try
     var devices = await provider.EnumerateAsync();
     if (devices.Count == 0)
     {
-        Console.WriteLine("未发现 NVIDIA 设备。");
+        Console.WriteLine($"未发现 NVIDIA 设备。{provider.LastError}");
         return 1;
     }
 

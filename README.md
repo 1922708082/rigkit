@@ -1,8 +1,14 @@
 # 矿卡工具箱 RigKit
 
+[![ci](https://github.com/1922708082/rigkit/actions/workflows/ci.yml/badge.svg)](https://github.com/1922708082/rigkit/actions/workflows/ci.yml)
+
 仓库：<https://github.com/1922708082/rigkit>
 
 面向矿卡持有者的硬件全生命周期工作台：验卡、解锁、调优、维护，全程可回滚。
+
+![RigKit M0 工作台](docs/screenshots/home-m0.png)
+
+> 截图由 `--smoke` 无头渲染生成，曲线为演示数据填充；真实运行时为 1 秒实时采样。
 
 ## 当前状态
 
@@ -13,13 +19,17 @@ M0 已完成：
 - `RigKit.slnx` + 8 个主项目 + `tools/RigKit.Probe`
 - `Directory.Build.props` / `global.json` / `.editorconfig`
 - Domain 设备与传感器模型、`IDeviceProvider` 抽象
-- `NvidiaSmiProvider` 设备枚举与传感器读取
+- `NvmlProvider`（首选）+ `NvidiaSmiProvider`（回退）+ `FallbackDeviceProvider`
 - 本机 CMP 90HX 实测通过：PCIe Gen2 x16、10 GB、驱动 616.92、温度 / 功耗 / 频率可读
+- Broker 只读管道：`system.info` / `ping`，`CurrentUserOnly`，单实例信号量
+- WPF 工作台：1360×860、侧栏、设备卡、评分环、4 个 KPI、风险列表、1 秒曲线
+- `--smoke` 无头渲染，用于 UI 回归与截图
 - `SupportMatrix`：CMP 默认 Supported，P 系列与 170HX 统一 Experimental，P 系列禁用图形解锁入口
-- xUnit 单元测试 15 个用例通过（CSV 解析、缺失值、支持级别矩阵）
+- xUnit 单元测试 19 个用例通过（CSV、缺失值、支持级别、Provider 回退）
 - `LICENSE`（Apache-2.0）与 `NOTICE` 已加入仓库
+- GitHub Actions CI：restore / build / test
 
-M0 待办：NVML Provider、Broker 管道、WPF 工作台壳、CI。
+M0 待办：PnP 热插拔、300 点环形缓冲 + SQLite 降采样、单实例、审计表、崩溃 dump。
 
 ## 开发命令
 
@@ -29,6 +39,9 @@ M0 待办：NVML Provider、Broker 管道、WPF 工作台壳、CI。
 
 # 设备探测（只读，不需要管理员权限）
 .\probe.ps1
+
+# 无头渲染工作台截图（UI 回归）
+dotnet run --project src\RigKit.App -- --smoke .\docs\screenshots\home-m0.png
 ```
 
 SDK 建议装在 `%USERPROFILE%\.dotnet`（10.0.402）。系统自带的 `C:\Program Files\dotnet` 如果只有运行时、没有 SDK，`dotnet` 命令可能命中旧宿主；可在 PowerShell profile 中转发到用户级 SDK，或直接运行 `.\build.ps1`。

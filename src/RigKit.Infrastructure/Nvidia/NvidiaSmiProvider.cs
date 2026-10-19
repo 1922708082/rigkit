@@ -50,7 +50,7 @@ public sealed class NvidiaSmiProvider : IDeviceProvider
             devices.Add(new Device(
                 new DeviceId(busId, pnpId),
                 fields[1],
-                GuessArchitecture(fields[1]),
+                NvidiaModelMap.GuessArchitecture(fields[1]),
                 DeviceVendor.Nvidia,
                 pciIds,
                 fields[3],
@@ -188,20 +188,6 @@ public sealed class NvidiaSmiProvider : IDeviceProvider
         }
 
         return normalized;
-    }
-
-    private static string GuessArchitecture(string model)
-    {
-        if (model.Contains("CMP 90HX", StringComparison.OrdinalIgnoreCase)) return "GA102";
-        if (model.Contains("CMP 70HX", StringComparison.OrdinalIgnoreCase)) return "GA104";
-        if (model.Contains("CMP 50HX", StringComparison.OrdinalIgnoreCase)) return "TU102";
-        if (model.Contains("CMP 40HX", StringComparison.OrdinalIgnoreCase)) return "TU106";
-        if (model.Contains("CMP 30HX", StringComparison.OrdinalIgnoreCase)) return "TU116";
-        if (model.Contains("CMP 170HX", StringComparison.OrdinalIgnoreCase)) return "GA100";
-        if (model.Contains("P102", StringComparison.OrdinalIgnoreCase)) return "GP102";
-        if (model.Contains("P104", StringComparison.OrdinalIgnoreCase)) return "GP104";
-        if (model.Contains("P106", StringComparison.OrdinalIgnoreCase)) return "GP106";
-        return "Unknown";
     }
 
     private static string LocateExecutable()

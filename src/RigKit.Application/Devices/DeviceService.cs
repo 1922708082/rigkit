@@ -9,6 +9,8 @@ public sealed class DeviceService(IDeviceProvider provider)
 
     public string ProviderName => _provider.Name;
 
+    public string LastError => (_provider as FallbackDeviceProvider)?.LastError ?? string.Empty;
+
     public Task<IReadOnlyList<Device>> GetDevicesAsync(CancellationToken cancellationToken = default) =>
         _provider.EnumerateAsync(cancellationToken);
 

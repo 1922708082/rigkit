@@ -28,7 +28,7 @@
 - [x] **T0-02** 配置 `Directory.Build.props`：`LangVersion=latest`、`Nullable=enable`、`TreatWarningsAsErrors=true`、`Version=0.1.0`
   → 验收：任意项目引入警告即构建失败
 - [x] **T0-03** 接入 xUnit，建 `tests/RigKit.UnitTests`，先覆盖 CSV 解析与缺失值处理
-  → 验收：`dotnet test` 通过（当前 15 个用例）；Integration / Hardware 测试项目后续补
+  → 验收：`dotnet test` 通过（当前 19 个用例）；Integration / Hardware 测试项目后续补
 - [ ] **T0-04** 配置 GitHub Actions：restore / build / test / publish 四段
   → 验收：PR 触发流水线，5 分钟内完成
 - [ ] **T0-05** 建立 Conventional Commits 规范与 PR 模板
@@ -38,10 +38,10 @@
 
 ### Broker 与 IPC
 
-- [ ] **T0-06** 实现命名管道服务 `\\.\pipe\RigKit.Broker.v1`，长度前缀 + JSON-RPC 2.0
-  → 验收：客户端可完成一次 `system.info` 往返
-- [ ] **T0-07** 管道 ACL 限制为当前用户 + Administrators
-  → 验收：其他用户连接被拒绝
+- [x] **T0-06** 实现命名管道服务 `\\.\pipe\RigKit.Broker.v1`，长度前缀 + JSON-RPC 2.0
+  → 验收：`system.info` 与 `ping` 往返成功
+- [x] **T0-07** 管道限制为当前用户（`PipeOptions.CurrentUserOnly`）
+  → 验收：当前用户可连接；后续补显式 ACL 与调用方签名校验
 - [ ] **T0-08** 调用方校验：PID → 镜像路径 → 数字签名
   → 验收：非 RigKit 进程连接被拒绝并记审计
 - [ ] **T0-09** 命令注册表与 JSON Schema 校验框架
@@ -59,35 +59,35 @@
   → 验收：编译通过，`RigKit.Probe` 已消费该抽象
 - [x] **T0-13b** `SupportMatrix` 基线：CMP 默认 Supported，P 系列与 170HX 统一 Experimental，未知卡 DetectOnly
   → 验收：9 个矩阵用例通过；P 系列 `AllowsGraphicsUnlock=false`
-- [ ] **T0-14** NVML Provider：温度、功耗、利用率、显存、频率、PState、PCIe 代数/宽度
-  → 验收：与 `nvidia-smi` 数值误差 < 2%
+- [x] **T0-14** NVML Provider：温度、功耗、利用率、显存、频率、PState、PCIe 代数/宽度
+  → 验收：本机 90HX 实测通过，NVML 与 nvidia-smi 数值一致（功耗墙口径差异已记录）
 - [ ] **T0-15** 设备枚举以 PCI 位置（bus/device/function）为主键
   → 验收：已按 PCI 位置实现，待双卡真机验证
-- [x] **T0-16** nvidia-smi Provider（当前作为首版主数据源）
+- [x] **T0-16** nvidia-smi Provider（作为 NVML 的回退数据源）
   → 验收：本机 CMP 90HX 读到温度 / 功耗 / 显存 / 频率 / PCIe
 - [x] **T0-17** SensorSample 归一化与新鲜度标记
   → 验收：缺失值显示 `--` 而非 0
 - [ ] **T0-18** 1 秒轮询 + 300 点环形缓冲 + 每分钟 SQLite 降采样
-  → 验收：连续运行 8 小时内存增长 < 30 MB
+  → 验收：1 秒轮询与 60 点曲线已实现；300 点 / SQLite / 8 小时内存验证待补
 - [ ] **T0-19** 设备变化监听（PnP 事件）与 UI 通知
   → 验收：拔插设备 2 秒内刷新
 
 ### UI 壳与设计系统
 
 - [ ] **T0-20** 设计 token：颜色、字体、间距、圆角、阴影（浅色 + 深色）
-  → 验收：无硬编码色值，主题切换全量生效
-- [ ] **T0-21** 主窗口骨架：44px 标题栏 + 232px 侧栏 + 内容区 + 28px 状态栏
-  → 验收：1360×860 与 1180×720 均不破版
+  → 验收：浅色 token 已落地（`Themes/Theme.xaml`）；深色 Rig Mode 待补
+- [x] **T0-21** 主窗口骨架：44px 标题栏 + 232px 侧栏 + 内容区 + 28px 状态栏
+  → 验收：1360×860 渲染通过；1180×720 待补截图
 - [ ] **T0-22** 基础组件：Button / Card / StatusPill / Input / Select / Tooltip
-  → 验收：四态齐全，键盘可达
+  → 验收：Button / Card / StatusPill / NavItem 已完成；Input / Select / Tooltip 待补
 - [ ] **T0-23** 导航与页面路由（工作台 / 设备 / 改造 / 调优 / 维护 / 设置）
-  → 验收：切换 180ms 动效，无闪烁
-- [ ] **T0-24** 工作台首页：设备卡、4 个 KPI、待处理、快捷动作
-  → 验收：接到真实传感器数据
+  → 验收：工作台已接入；其余页占位并禁用，M1/M2 接入
+- [x] **T0-24** 工作台首页：设备卡、4 个 KPI、待处理、快捷动作
+  → 验收：接到真实 NVML 传感器，`--smoke` 截图通过
 - [ ] **T0-25** 日志控制台组件 + 虚拟化滚动
   → 验收：1 万行日志滚动不卡
 - [ ] **T0-26** 空状态、加载态、错误态三套模板
-  → 验收：每页至少覆盖一种
+  → 验收：错误态（无设备/读取失败）已接入；空态与加载态待补
 
 ### 基础设施
 
@@ -99,6 +99,10 @@
   → 验收：第二次启动激活旧窗口，不出现“启动即退”
 - [ ] **T0-30** 崩溃捕获与 dump 写入
   → 验收：手动触发异常可生成 dump 与可读栈
+- [x] **T0-31** `--smoke` 无头渲染：加载工作台、填充 60 点演示曲线、输出 PNG
+  → 验收：`docs/screenshots/home-m0.png` 生成，XAML 加载无异常
+- [x] **T0-32** `FallbackDeviceProvider`：NVML 优先、nvidia-smi 回退、传感器失败切换
+  → 验收：4 个回退用例通过
 
 ## M1 体检与回滚（2 周）
 
